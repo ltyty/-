@@ -1,0 +1,87 @@
+---
+title: "Seurat"
+author: "罗天宇"
+date: "2024-04-10"
+output: html_document
+---
+
+文献复现：Hypothalamic Rax+ tanycytes contribute to tissue repair and tumorigenesis upon oncogene activation in mice. Nat Commun (2021).
+
+
+```{r 加载包}
+library(Seurat)
+library(dplyr)
+```
+
+```{r}
+ser <- Read10X(data.dir = "GSM3897320")
+ser <- CreateSeuratObject(counts = ser,
+                          project = "Median eminence", 
+                          min.cells = 3,
+                          min.features = 200)
+
+ser <- ser %>% NormalizeData() %>% FindVariableFeatures() %>% ScaleData() %>% RunPCA()
+
+#根据图来选择合适的PCA维度（dim）
+ElbowPlot(ser, ndims=50)  #设置要图示的数据维度，最多50
+
+DimHeatmap(ser,dims = 10:20)
+
+ser <- ser %>% FindNeighbors(dims = 1:40) %>% FindClusters(resolution = 0.3) %>% RunTSNE() 
+DimPlot(ser)
+```
+
+
+根据文献原文对marker的描述，对clusters进行注释 
+```{r 细胞类型注释}
+FeaturePlot(ser, 
+            c("Rax", "Col25a1", "Scn7a", "Mia"),
+            label = T)#tanycyte
+FeaturePlot(ser, 
+            c("Lum"),
+            label = T)#vascular and leptomeningeal cell
+FeaturePlot(ser, 
+            c("Syp"),
+            label = T)#neuron
+FeaturePlot(ser, 
+            c("Cspg4"),
+            label = T)#oligodendrocyte precursor cell
+FeaturePlot(ser, 
+            c("Slc47a1", "Tshb"),
+            label = T)#pars tuberalis cell
+FeaturePlot(ser, 
+            c("Nkg7"),
+            label = T)#NK cell
+FeaturePlot(ser, 
+            c("Aif1"),
+            label = T)#microglia
+FeaturePlot(ser, 
+            c("Mog"),
+            label = T)#oligodendrocyte
+FeaturePlot(ser, 
+            c("Sox2", "Slc1a3", "Vim", "Aldoc"),
+            label = T)#putative stem cell
+
+cluster.ids <- c(
+  "0"="Tanycyte",
+  "1"="vascular and leptomeningeal cell",
+  "2"="Putative stem cell",
+  "3"="Microglia",
+  "4"="Oligodendrocyte precursor cell",
+  "5"="Neuron",
+  "6"="Oligodendrocyte",
+  "7"="NK cell",
+  "8"="Pars tuberalis cell"
+  )
+ser <- RenameIdents(ser, cluster.ids)
+#ser$celltype <- Idents(ser)
+DimPlot(ser)
+```
+
+
+```{r 初步复现Figure 1C}
+FeaturePlot(ser, 
+            c("Rax", "Col25a1", "Scn7a", "Mia"),
+            label = F)
+```
+
