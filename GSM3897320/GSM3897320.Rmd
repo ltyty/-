@@ -85,3 +85,6 @@ FeaturePlot(ser,
             label = F)
 ```
 
+```{r 保存数据}
+saveRDS(ser, file = "GSM3897320.RData")
+```
